@@ -17,7 +17,7 @@ ssh vagrant@$ENVIRONMENT "cd /var/www && tar xfz deployed.tar.gz"
 RETRIES=5
 
 for i in $(seq $RETRIES); do
-  if curl localhost:20080/index.html --silent --fail; then 
+  if curl localhost:20080/index.html --silent --fail > /dev/null; then 
     echo "Found deployed version"
     exit 0
   else 
