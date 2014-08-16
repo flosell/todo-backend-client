@@ -3,4 +3,8 @@
 mkdir -p build
 rm -rf build/*
 
-tar czf build/package.tar.gz index.html js/ css/ bower_components
+OUTPUTFILE=build/package.tar.gz
+
+tar czf $OUTPUTFILE index.html js/ css/ bower_components
+
+echo "Created $OUTPUTFILE"
