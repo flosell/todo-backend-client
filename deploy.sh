@@ -10,9 +10,9 @@ TARFILE=$2
 
 echo "Deploying $TARFILE to $ENVIRONMENT..."
 
-ssh vagrant@$ENVIRONMENT "cd /var/www && rm -rf *"
-scp $TARFILE vagrant@$ENVIRONMENT:/var/www/deployed.tar.gz
-ssh vagrant@$ENVIRONMENT "cd /var/www && tar xfz deployed.tar.gz"
+ssh -F /tmp/lambdacd-dev-env-ssh-config vagrant@$ENVIRONMENT "cd /var/www && rm -rf *"
+scp -F /tmp/lambdacd-dev-env-ssh-config $TARFILE vagrant@$ENVIRONMENT:/var/www/deployed.tar.gz
+ssh -F /tmp/lambdacd-dev-env-ssh-config vagrant@$ENVIRONMENT "cd /var/www && tar xfz deployed.tar.gz"
 
 RETRIES=5
 
