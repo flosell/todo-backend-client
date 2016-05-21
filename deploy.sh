@@ -1,30 +1,33 @@
 #!/bin/bash -e
 
-if [ $# -lt 2 ]; then
-  echo "usage: <environment> <tarfile>"
+if [ -z "${FRONTEND_VERSION}" ]; then
+  echo "ERROR: No FRONTEND_VERSION defined!"
   exit 1
 fi
 
-ENVIRONMENT=$1
-TARFILE=$2
+if [ -z "${DEPLOY_ENVIRONMENT}" ]; then
+  echo "ERROR: No DEPLOY_ENVIRONMENT defined!"
+  exit 1
+fi
 
-echo "Deploying $TARFILE to $ENVIRONMENT..."
+if [ "${DEPLOY_ENVIRONMENT}" == "ci" ]; then
+  PUBLIC_FACING_PORT=8082
+  BACKEND_PORT=8081
+elif [ "${DEPLOY_ENVIRONMENT}" == "qa" ]; then
+  PUBLIC_FACING_PORT=8092
+  BACKEND_PORT=8091
+else
+  echo "DEPLOY_ENVIRONMENT must be ci or qa"
+fi
 
-ssh -F /tmp/lambdacd-dev-env-ssh-config vagrant@$ENVIRONMENT "cd /var/www && rm -rf *"
-scp -F /tmp/lambdacd-dev-env-ssh-config $TARFILE vagrant@$ENVIRONMENT:/var/www/deployed.tar.gz
-ssh -F /tmp/lambdacd-dev-env-ssh-config vagrant@$ENVIRONMENT "cd /var/www && tar xfz deployed.tar.gz"
+CONTAINER_NAME="lambdacd-demo_${DEPLOY_ENVIRONMENT}_frontend"
 
-RETRIES=5
+echo -e "\033[1mStopping old containers in ${DEPLOY_ENVIRONMENT}...\033[0m"
+docker kill $CONTAINER_NAME >/dev/null 2>&1 || true
+docker rm $CONTAINER_NAME >/dev/null 2>&1  || true
 
-for i in $(seq $RETRIES); do
-  if curl localhost:20080/index.html --silent --fail > /dev/null; then 
-    echo "Found deployed version"
-    exit 0
-  else 
-    echo "waiting for deployed version..."
-    sleep 1
-  fi
-done
+echo -e "\033[1mStarting Container in ${DEPLOY_ENVIRONMENT}...\033[0m"
 
-echo "ERROR, no deployed version found after $RETRIES retries"
-exit 1
+docker run --name "${CONTAINER_NAME}" -p $PUBLIC_FACING_PORT:80 -d lambdacd-demo/frontend:${FRONTEND_VERSION} >/dev/null
+
+echo -e "\033[1mContainer now running on http://localhost:${PUBLIC_FACING_PORT}/?http://localhost:${BACKEND_PORT}/todos\033[0m"
